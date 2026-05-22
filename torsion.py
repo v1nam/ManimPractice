@@ -1,0 +1,90 @@
+from manim import *
+
+class Torsion(ThreeDScene):
+    def func(self, u, v, t):
+        twist = t * (u - (-2)) / 4
+        return np.array([np.sin(v + twist), u, np.cos(v + twist)])
+
+    def construct(self):
+        self.set_camera_orientation(theta=30 * DEGREES, phi=75 * DEGREES)
+
+        axes = ThreeDAxes()
+        twist_angle = ValueTracker(0)
+        shear_amount = ValueTracker(0)
+
+        surface = Surface(
+            lambda u, v: axes.c2p(*self.func(u, v, twist_angle.get_value())),
+            u_range=[-2, 2],
+            v_range=[0, TAU],
+            resolution=16,
+            fill_color=GREEN,
+            checkerboard_colors=False,
+            stroke_color=WHITE,
+            stroke_width=1
+        )
+
+        self.play(FadeIn(surface))
+        self.play(surface.submobjects[100].animate.set_fill(GREEN_E))
+
+        carr1 = CurvedArrow(surface.get_edge_center([0, 1, -1]), surface.get_edge_center([1, 1, 0])).shift([0, 0.5, 0])
+        carr2 = CurvedArrow(surface.get_edge_center([0, -1, 1]), surface.get_edge_center([1, -1, 0])).shift([0, -0.8, -0.8])
+        self.play(FadeIn(carr1, carr2))
+        t1 = MathTex("T").rotate(PI/2, [0, 0, 1]).rotate(PI/2, [0, 1, 0]).next_to(carr1, UP)
+        t2 = MathTex("T'").rotate(PI/2, [0, 0, 1]).rotate(PI/2, [0, 1, 0]).next_to(carr2, DOWN)
+        self.play(Write(t1), Write(t2))
+
+        def make_shear_square(shear):
+            square = Square(side_length=1)
+            square.set_stroke(WHITE, 2)
+            square.set_fill(GREEN_E, opacity=0.7)
+            square.apply_matrix(
+                np.array(
+                    [
+                        [1, 0, 0],
+                        [shear, 1, 0],
+                        [0, 0, 1],
+                    ]
+                )
+            )
+            square.shift(4 * RIGHT)
+            return square
+
+        shear_square = make_shear_square(shear_amount.get_value())
+        self.add_fixed_in_frame_mobjects(shear_square)
+        self.remove(shear_square)
+
+        self.play(FadeIn(shear_square))
+
+        def f(s):
+            s.become(Surface(
+                lambda u, v: axes.c2p(*self.func(u, v, twist_angle.get_value())),
+                u_range=[-2, 2],
+                v_range=[0, TAU],
+                resolution=16,
+                fill_color=GREEN,
+                checkerboard_colors=False,
+                stroke_color=WHITE,
+                stroke_width=1
+            ))
+            surface.submobjects[100].set_fill(GREEN_E)
+        surface.add_updater(f)
+
+        shear_square.add_updater(lambda sq: sq.become(make_shear_square(shear_amount.get_value())))
+         
+        self.play(
+            twist_angle.animate.set_value(-PI / 2),
+            shear_amount.animate.set_value(0.3),
+            run_time=3,
+        )
+
+        gl = DashedLine(shear_square.get_corner(DL), shear_square.get_corner(DL) + RIGHT*1.3)
+        ga = Angle(gl, Line(shear_square.get_corner(DL) + [-1, -0.3, 0], shear_square.get_corner(DL)), radius=0.8)
+        g = MathTex(r"\gamma").scale(0.7).next_to(ga, RIGHT).shift(UP*0.05)
+
+        self.add_fixed_in_frame_mobjects(gl, ga, g)
+        self.remove(gl, ga, g)
+
+        self.play(Create(gl))
+        self.play(Create(ga), Write(g))
+        
+        self.wait()
