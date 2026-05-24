@@ -23,7 +23,9 @@ class Torsion(ThreeDScene):
             stroke_width=1
         )
 
-        self.play(FadeIn(surface))
+        endcap = Circle(0.8, GREEN, fill_opacity=0.9).rotate(PI/2, [1, 0, 0]).move_to(surface.get_critical_point([0, 1, 0]))
+
+        self.play(FadeIn(surface, endcap))
         self.play(surface.submobjects[100].animate.set_fill(GREEN_E))
 
         carr1 = CurvedArrow(surface.get_edge_center([0, 1, -1]), surface.get_edge_center([1, 1, 0])).shift([0, 0.5, 0])
@@ -34,9 +36,10 @@ class Torsion(ThreeDScene):
         self.play(Write(t1), Write(t2))
 
         def make_shear_square(shear):
-            square = Square(side_length=1)
+            square = Square(side_length=1).move_to(UR*0.5)
             square.set_stroke(WHITE, 2)
             square.set_fill(GREEN_E, opacity=0.7)
+            
             square.apply_matrix(
                 np.array(
                     [
@@ -46,7 +49,8 @@ class Torsion(ThreeDScene):
                     ]
                 )
             )
-            square.shift(4 * RIGHT)
+            square.shift(2.5*DL)
+            
             return square
 
         shear_square = make_shear_square(shear_amount.get_value())
@@ -70,12 +74,6 @@ class Torsion(ThreeDScene):
         surface.add_updater(f)
 
         shear_square.add_updater(lambda sq: sq.become(make_shear_square(shear_amount.get_value())))
-         
-        self.play(
-            twist_angle.animate.set_value(-PI / 2),
-            shear_amount.animate.set_value(0.3),
-            run_time=3,
-        )
 
         gl = DashedLine(shear_square.get_corner(DL), shear_square.get_corner(DL) + RIGHT*1.3)
         ga = Angle(gl, Line(shear_square.get_corner(DL) + [-1, -0.3, 0], shear_square.get_corner(DL)), radius=0.8)
@@ -85,6 +83,13 @@ class Torsion(ThreeDScene):
         self.remove(gl, ga, g)
 
         self.play(Create(gl))
+         
+        self.play(
+            twist_angle.animate.set_value(-PI / 2),
+            shear_amount.animate.set_value(0.3),
+            run_time=4,
+        )
+
         self.play(Create(ga), Write(g))
         
-        self.wait()
+        self.wait(2)
