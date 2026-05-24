@@ -23,7 +23,7 @@ class Torsion(ThreeDScene):
             stroke_width=1
         )
 
-         # i think its radius should be 1 but that looked too big and 0.9 fit, idk
+         # i think its radius should be 1 but that looked too big and 0.8 fit, idk
         endcap = Circle(0.8, GREEN, fill_opacity=0.9).rotate(PI/2, [1, 0, 0]).move_to(surface.get_critical_point([0, 1, 0]))
 
         self.play(FadeIn(surface, endcap))
