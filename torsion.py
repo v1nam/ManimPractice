@@ -140,27 +140,43 @@ class Relation(ThreeDScene):
         outer_rad_label = MathTex("R").scale(0.5).rotate(PI/2, [1, 0, 0]).rotate(PI/1.5, [0, 0, 1]).next_to(outer_rad, LEFT).set_opacity(0.5)
         self.play(Create(outer_rad), Write(outer_rad_label))
 
-        self.play(outer_cylinder.animate.set_opacity(0.12), FadeIn(inner_cylinder))
+        self.play(outer_cylinder.animate.set_opacity(0.2), FadeIn(inner_cylinder))
+
+        # the arrows and labels for depicting torsioning moments
+        carr1 = CurvedArrow(outer_cylinder.get_edge_center([0, 1, -1]), outer_cylinder.get_edge_center([-1, 1, 0]), angle=-PI/2, color=GRAY).shift([0, 0.5, 0]) # the arrow on right end
+        carr2 = CurvedArrow(outer_cylinder.get_edge_center([0, -1, 1]), outer_cylinder.get_edge_center([1, -1, 0]), angle=PI/2, color=GRAY).shift([0, -0.8, -0.8]) # the arrow on left end
+        t1 = MathTex("T", color=GRAY).rotate(PI/2, [0, 0, 1]).rotate(PI/2, [0, 1, 0]).next_to(carr1, UP)
+        t2 = MathTex("T'", color=GRAY).rotate(PI/2, [0, 0, 1]).rotate(PI/2, [0, 1, 0]).next_to(carr2, DOWN)
+        self.play(FadeIn(carr1, carr2), Write(t1), Write(t2))
     
-        front_face_center = inner_cylinder.get_critical_point([0, 1, 0])
-        phi = PI/2.8
-        arc_p1 = front_face_center + radius_inner*np.array([np.cos(phi), 0, np.sin(phi)])
-        arc_p2 = inner_cylinder.get_edge_center([1, 1, 0])
-        arc = ArcBetweenPoints(arc_p1, arc_p2, stroke_color=ORANGE)
-        rad = Line(front_face_center, arc_p2)
-        rot_rad = Line(front_face_center, arc_p1)
-        long = Line(arc_p2, inner_cylinder.get_edge_center([1, -1, 0]))
+        phi = ValueTracker(0) #PI/2.8
+        
+        def create_labels(m=None):
+            front_face_center = inner_cylinder.get_critical_point([0, 1, 0])
+            arc_p1 = front_face_center + radius_inner*np.array([np.cos(phi.get_value()), 0, np.sin(phi.get_value())])
+            arc_p2 = inner_cylinder.get_edge_center([1, 1, 0])
+            arc = ArcBetweenPoints(arc_p1, arc_p2, stroke_color=ORANGE)
+            rad = Line(front_face_center, arc_p2)
+            rot_rad = Line(front_face_center, arc_p1)
+            long = Line(arc_p2, inner_cylinder.get_edge_center([1, -1, 0]))
 
-        long_line = ParametricFunction(lambda t: np.array([radius_inner * np.cos(phi*t), length * t, radius_inner * np.sin(phi*t)])).shift([0, pos - length/2, 0])
+            long_line = ParametricFunction(lambda t: np.array([radius_inner * np.cos(phi.get_value()*t), length * t, radius_inner * np.sin(phi.get_value()*t)])).shift([0, pos - length/2, 0])
+            l = VGroup(arc, rad, rot_rad, long, long_line)
+            if m:
+                m.become(l)
+            else:
+                return l
 
-        self.play(Create(rad), Create(long))
-        self.play(Create(arc))
-        self.play(Create(rot_rad), Create(long_line))
+        labels = create_labels()
+        labels.add_updater(create_labels)
+
+        self.play(Create(labels))
+        self.play(phi.animate.set_value(PI/2.8), rate_func=linear)
         self.wait()
 
-        labelL = MathTex("L").scale(0.8).rotate(PI/2, [1, 0, 0]).rotate(PI/2, [0, 0, 1]).next_to(long, RIGHT).shift([0, 0, -0.2])
-        labelR = MathTex(r"\rho").scale(0.8).rotate(PI/2, [1, 0, 0]).rotate(PI/1.5, [0, 0, 1]).next_to(rad, 0.5*IN)
-        labelPhi = MathTex(r"\phi").scale(0.7).rotate(PI/2, [1, 0, 0]).rotate(PI/1.5, [0, 0, 1]).next_to(rot_rad, 0.1*RIGHT)
+        labelL = MathTex("L").scale(0.8).rotate(PI/2, [1, 0, 0]).rotate(PI/2, [0, 0, 1]).next_to(labels[3], RIGHT).shift([0, 0, -0.2])
+        labelR = MathTex(r"\rho").scale(0.8).rotate(PI/2, [1, 0, 0]).rotate(PI/1.5, [0, 0, 1]).next_to(labels[1], 0.5*IN)
+        labelPhi = MathTex(r"\phi").scale(0.7).rotate(PI/2, [1, 0, 0]).rotate(PI/1.5, [0, 0, 1]).next_to(labels[2], 0.1*RIGHT)
         self.play(Write(labelL), Write(labelR), Write(labelPhi))
 
         carr = CurvedArrow(outer_cylinder.get_edge_center([-1, 0, 1]), outer_cylinder.get_edge_center([-1, 0, 1]) + (UP + 0.5*OUT)*3, angle=-0.6*PI)
@@ -184,8 +200,8 @@ class Relation(ThreeDScene):
 
         plg = MathTex(r"L \cdot \gamma", color=ORANGE).scale(0.8).next_to(pl3, RIGHT)
 
-        psector = Sector(radius=0.8, start_angle=PI, angle=-phi, fill_color=GREEN_E, fill_opacity=0.5, stroke_width=2).to_corner(RIGHT)
-        psarc = Arc(radius=0.8, start_angle=PI, angle=-phi, arc_center=psector.get_arc_center(), stroke_color=ORANGE, stroke_width=4)
+        psector = Sector(radius=0.8, start_angle=PI, angle=-phi.get_value(), fill_color=GREEN_E, fill_opacity=0.5, stroke_width=2).to_corner(RIGHT)
+        psarc = Arc(radius=0.8, start_angle=PI, angle=-phi.get_value(), arc_center=psector.get_arc_center(), stroke_color=ORANGE, stroke_width=4)
         pphi = MathTex(r"\phi").scale(0.7).next_to(psarc).shift(LEFT*0.35 + DOWN*0.1)
         prho = MathTex(r"\rho").scale(0.7).next_to(psector, DOWN)
 
@@ -201,11 +217,11 @@ class Relation(ThreeDScene):
         self.play(Create(pl1), Create(pl2), Create(pl3))
         self.play(Create(pg), Write(gamma))
         self.play(Write(plg))
-        self.wait(2)
+        self.wait()
 
         self.play(FadeIn(psector, psarc))
         self.play(Write(pphi), Write(prho))
         self.play(Write(ppr))
-        self.wait(2)
+        self.wait(3)
         self.play(Write(pfin))
         self.wait(2)
