@@ -1,4 +1,4 @@
-This is a collection of animated visuals created in [ManimCE](https://github.com/ManimCommunity/manim). Currently geared towards the subject of solid mechanics and related topics.
+This is a collection of python scripts pertaining to animated visuals created in [ManimCE](https://github.com/ManimCommunity/manim). Currently geared towards the subject of solid mechanics and related topics.
 
 
 ### Resources for ManimCE
